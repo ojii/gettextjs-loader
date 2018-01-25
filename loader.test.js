@@ -1,6 +1,8 @@
 import path from 'path';
+import fs from 'fs';
 import webpack from 'webpack';
 import MemoryFS from 'memory-fs';
+import tmp from 'tmp';
 
 const p = (...parts) => path.resolve(__dirname, ...parts);
 
@@ -59,4 +61,16 @@ const messages = Immutable.fromJS({"":["Project-Id-Version: gettextjs\\nPO-Revis
 const plural = n => (0) * 1;
 
 export default new Gettext(Catalog({headers: headers, messages: messages, plural: plural}));`);
+});
+
+
+test('Compiled file actually works', async () => {
+  const stats = await compiler('en.mo');
+  const output = stats.toJson().modules[0].source;
+  tmp.file((err, path) => {
+    if (err) throw err;
+    fs.writeSync(path, output);
+    const gettext = require(path);
+    expect(gettext.gettext('simple-string')).toEqual('A simple string')
+  });
 });
